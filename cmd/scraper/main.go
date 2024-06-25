@@ -5,8 +5,7 @@ import (
 
 	"github.com/jeffrey1200/facebook-marketplace-scraper/config"
 	"github.com/jeffrey1200/facebook-marketplace-scraper/internals/browser"
-	"github.com/jeffrey1200/facebook-marketplace-scraper/internals/scraper"
-	"github.com/jeffrey1200/facebook-marketplace-scraper/util"
+	"github.com/jeffrey1200/facebook-marketplace-scraper/internals/cli"
 	"go.uber.org/zap"
 )
 
@@ -22,11 +21,12 @@ func main() {
 
 	}
 	defer browserInstance.Close()
+	cli.Repl()
 	// scraper.ScrapeMarketplaceIndividualCar(browserInstance, cfg, logger)
-	carData, err := scraper.ScrapeMarketplace(browserInstance, cfg, logger)
-	if err != nil {
-		logger.Fatal("Failed to scrape marketplace", zap.Error(err))
-	}
-	util.SaveScrapedDataToJSON(carData)
+	// carData, err := scraper.ScrapeMarketplace(browserInstance, cfg, logger)
+	// if err != nil {
+	// 	logger.Fatal("Failed to scrape marketplace", zap.Error(err))
+	// }
+	// util.SaveScrapedDataToJSON(carData)
 	log.Println("finished scraping!")
 }

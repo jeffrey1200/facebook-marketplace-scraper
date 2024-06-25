@@ -44,10 +44,24 @@ import (
 func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logger) (models.CarData, error) {
 
 	selectLocationClasses := "x1i10hfl x1qjc9v5 xjbqb8w xjqpnuy xa49m3k xqeqjp1 x2hbi6w x13fuv20 xu3j5b3 x1q0q8m5 x26u7qi x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xdl72j9 x2lah0s xe8uvvx x11i5rnm xat24cr x1mh8g0r x2lwn1j xeuugli xexx8yu x4uap5 x18d9i69 xkhd6sd x1n2onr6 x16tdsg8 x1hl2dhg xggy1nq x1ja2u2z x1t137rt x1o1ewxj x3x9cwd x1e5q0jg x13rtm0m x1q0g3np x87ps6o x1lku1pv x78zum5 x1a2a7pz x1xmf6yo"
+	selectLocationJoinedClasses := fmt.Sprintf("div.%s", util.JoinClassNames(selectLocationClasses))
 	closeButtonClasses := "x1i10hfl x1ejq31n xd10rxx x1sy0etr x17r0tee x1ypdohk xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r x16tdsg8 x1hl2dhg xggy1nq x87ps6o x1lku1pv x1a2a7pz x6s0dn4 xzolkzo x12go9s9 x1rnf11y xprq8jg x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x78zum5 xl56j7k xexx8yu x4uap5 x18d9i69 xkhd6sd x1n2onr6 xc9qbxq x14qfxbe x1qhmfi1"
+	selectCityFirstOption := fmt.Sprintf("div.%s", util.JoinClassNames("x1i10hfl x1qjc9v5 xjbqb8w xjqpnuy xa49m3k xqeqjp1 x2hbi6w x13fuv20 xu3j5b3 x1q0q8m5 x26u7qi x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xdl72j9 x2lah0s xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r x2lwn1j xeuugli xexx8yu x4uap5 x18d9i69 xkhd6sd x1n2onr6 x16tdsg8 x1hl2dhg xggy1nq x1ja2u2z x1t137rt x1o1ewxj x3x9cwd x1e5q0jg x13rtm0m x1q0g3np x87ps6o x1lku1pv x78zum5 x1a2a7pz xh8yej3"))
+	closeButtonJoinedClasses := fmt.Sprintf("div.%s", util.JoinClassNames(closeButtonClasses))
+	imgTagClassName := fmt.Sprintf("img.%s", util.JoinClassNames("xt7dq6l xl1xv1r x6ikm8r x10wlt62 xh8yej3"))
+	// beforeMileageSpanClassName := fmt.Sprintf("span.%s", util.JoinClassNames("x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1tu3fi x3x7a5m x1nxh6w3 x1sibtaa xo1l8bm xi81zsa"))
+	// spanMileage := fmt.Sprintf("span.%s", util.JoinClassNames("x1lliihq x6ikm8r x10wlt62 x1n2onr6 xlyipyv xuxw1ft"))
+	actualCostSpanClassName := fmt.Sprintf("span.%s", util.JoinClassNames("x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x3x7a5m x1lkfr7t x1lbecb7 x1s688f xzsf02u"))
+	priceWasAtSpanClassName := fmt.Sprintf("span.%s", util.JoinClassNames("x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x3x7a5m x1lkfr7t x1lbecb7 xk50ysn xi81zsa"))
 
-	baseURl := "https://www.facebook.com/marketplace/"
-	seachParamsAndQuery := "search?minPrice=100&maxPrice=10000&daysSinceListed=1&maxMileage=170000&minMileage=0&query=honda civic&exact=false"
+	minPrice := 100
+	maxPrice := 10000
+	daysSinceListed := 1
+	minMileage := 0
+	maxMileage := 170000
+	queryString := "honda civic"
+
+	seachParamsAndQuery := fmt.Sprintf("/search?minPrice=%d&maxPrice=%d&daysSinceListed=%d&maxMileage=%d&minMileage=%d&query=%s&exact=false", minPrice, maxPrice, daysSinceListed, maxMileage, minMileage, queryString)
 
 	page, err := browser.Page(proto.TargetCreateTarget{URL: baseURl + seachParamsAndQuery})
 	if err != nil {
@@ -59,11 +73,6 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 	if err != nil {
 		logger.Fatal("Error setting viewport", zap.Error(err))
 	}
-
-	closeButtonJoinedClasses := fmt.Sprintf("div.%s", util.JoinClassNames(closeButtonClasses))
-	selectLocationJoinedClasses := fmt.Sprintf("div.%s", util.JoinClassNames(selectLocationClasses))
-
-	selectCityFirstOption := fmt.Sprintf("div.%s", util.JoinClassNames("x1i10hfl x1qjc9v5 xjbqb8w xjqpnuy xa49m3k xqeqjp1 x2hbi6w x13fuv20 xu3j5b3 x1q0q8m5 x26u7qi x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xdl72j9 x2lah0s xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r x2lwn1j xeuugli xexx8yu x4uap5 x18d9i69 xkhd6sd x1n2onr6 x16tdsg8 x1hl2dhg xggy1nq x1ja2u2z x1t137rt x1o1ewxj x3x9cwd x1e5q0jg x13rtm0m x1q0g3np x87ps6o x1lku1pv x78zum5 x1a2a7pz xh8yej3"))
 
 	signUpCloseButton, err := page.Element(closeButtonJoinedClasses)
 	util.HandleError(err, "Error finding sign up close button", logger)
@@ -111,12 +120,6 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 	util.HandleError(err, "Error finding apply button", logger)
 	util.HandleError(locationModalApplyButton.Click(proto.InputMouseButtonLeft, 1), "Error while clicking the Apply button inside location modal", logger)
 
-	imgTagClassName := fmt.Sprintf("img.%s", util.JoinClassNames("xt7dq6l xl1xv1r x6ikm8r x10wlt62 xh8yej3"))
-	beforeMileageSpanClassName := fmt.Sprintf("span.%s", util.JoinClassNames("x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1tu3fi x3x7a5m x1nxh6w3 x1sibtaa xo1l8bm xi81zsa"))
-	spanMileage := fmt.Sprintf("span.%s", util.JoinClassNames("x1lliihq x6ikm8r x10wlt62 x1n2onr6 xlyipyv xuxw1ft"))
-	actualCostSpanClassName := fmt.Sprintf("span.%s", util.JoinClassNames("x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x3x7a5m x1lkfr7t x1lbecb7 x1s688f xzsf02u"))
-	priceWasAtSpanClassName := fmt.Sprintf("span.%s", util.JoinClassNames("x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x3x7a5m x1lkfr7t x1lbecb7 xk50ysn xi81zsa"))
-
 	// log.Println(actualCostSpanClassName)
 	// time.Sleep(1 * time.Second)
 
@@ -133,7 +136,7 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 	data, err := page.Elements(parentDIV)
 	util.HandleError(err, "Error finding all divs with class name: xjp7ctv", logger)
 
-	fmt.Printf("%s %s", beforeMileageSpanClassName, spanMileage)
+	// fmt.Printf("%s %s", beforeMileageSpanClassName, spanMileage)
 	var cars []models.CarInformation
 	// time.Sleep(2 * time.Second)
 	page.MustWaitIdle()

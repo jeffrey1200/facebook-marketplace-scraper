@@ -15,3 +15,8 @@ type CarData struct {
 	AmountOfCars int              `json:"amount_of_cars"`
 	Cars         []CarInformation `json:"cars"`
 }
+
+type CarExtendedInformation struct {
+	AboutThisVehicle  string `json:"about_this_vehicle"`
+	SellerDescription string `json:"seller_description"`
+}
