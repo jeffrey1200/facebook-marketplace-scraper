@@ -11,37 +11,13 @@ import (
 	"github.com/go-rod/rod/lib/input"
 	"github.com/go-rod/rod/lib/proto"
 	"github.com/jeffrey1200/facebook-marketplace-scraper/config"
+	"github.com/jeffrey1200/facebook-marketplace-scraper/internals/cli"
 	"github.com/jeffrey1200/facebook-marketplace-scraper/internals/models"
 	"github.com/jeffrey1200/facebook-marketplace-scraper/util"
 	"go.uber.org/zap"
 )
 
-// type carInformation struct {
-// 	Price         int    `json:"price"`
-// 	PriceWasAt    int    `json:"price_was_at"`
-// 	CarName       string `json:"car_name"`
-// 	Location      string `json:"location"`
-// 	Mileage       string `json:"mileage"`
-// 	CarDetailsURL string `json:"car_details_url"`
-// 	ImageURL      string `json:"image_url"`
-// }
-
-//	type CarData struct {
-//		CreationDate string           `json:"creation_date"`
-//		AmountOfCars int              `json:"amount_of_cars"`
-//		Cars         []carInformation `json:"cars"`
-//	}
-// type browserConfig struct {
-// 	Browser launcher.Launcher
-// }
-
-// func handleError(err error, msg string, logger *zap.Logger) {
-// 	if err != nil {
-// 		logger.Error(msg, zap.Error(err))
-// 	}
-// }
-
-func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logger) (models.CarData, error) {
+func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, searchParameters cli.UrlParameters, logger *zap.Logger) (models.CarData, error) {
 
 	selectLocationClasses := "x1i10hfl x1qjc9v5 xjbqb8w xjqpnuy xa49m3k xqeqjp1 x2hbi6w x13fuv20 xu3j5b3 x1q0q8m5 x26u7qi x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xdl72j9 x2lah0s xe8uvvx x11i5rnm xat24cr x1mh8g0r x2lwn1j xeuugli xexx8yu x4uap5 x18d9i69 xkhd6sd x1n2onr6 x16tdsg8 x1hl2dhg xggy1nq x1ja2u2z x1t137rt x1o1ewxj x3x9cwd x1e5q0jg x13rtm0m x1q0g3np x87ps6o x1lku1pv x78zum5 x1a2a7pz x1xmf6yo"
 	selectLocationJoinedClasses := fmt.Sprintf("div.%s", util.JoinClassNames(selectLocationClasses))
@@ -54,16 +30,9 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 	actualCostSpanClassName := fmt.Sprintf("span.%s", util.JoinClassNames("x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x3x7a5m x1lkfr7t x1lbecb7 x1s688f xzsf02u"))
 	priceWasAtSpanClassName := fmt.Sprintf("span.%s", util.JoinClassNames("x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x3x7a5m x1lkfr7t x1lbecb7 xk50ysn xi81zsa"))
 
-	minPrice := 100
-	maxPrice := 10000
-	daysSinceListed := 1
-	minMileage := 0
-	maxMileage := 170000
-	queryString := "honda civic"
+	pageURL := fmt.Sprintf(baseURl+"/search?minPrice=%d&maxPrice=%d&minMileage=%d&maxMileage=%d&daysSinceListed=%d&query=%s&exact=false", searchParameters.MinPrice, searchParameters.MaxPrice, searchParameters.MinMileage, searchParameters.MaxMileage, searchParameters.DaysSinceListed, searchParameters.QueryName)
 
-	seachParamsAndQuery := fmt.Sprintf("/search?minPrice=%d&maxPrice=%d&daysSinceListed=%d&maxMileage=%d&minMileage=%d&query=%s&exact=false", minPrice, maxPrice, daysSinceListed, maxMileage, minMileage, queryString)
-
-	page, err := browser.Page(proto.TargetCreateTarget{URL: baseURl + seachParamsAndQuery})
+	page, err := browser.Page(proto.TargetCreateTarget{URL: pageURL})
 	if err != nil {
 		logger.Fatal("Error creating page", zap.Error(err))
 	}
@@ -85,7 +54,7 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 	locationInputBox, err := page.Element("label[aria-label='Location']")
 	util.HandleError(err, "Error finding location input box inside location modal", logger)
 	util.HandleError(locationInputBox.Click(proto.InputMouseButtonLeft, 1), "Error selecting location input box inside location model", logger)
-	util.HandleError(locationInputBox.Input("Newark, Delaware"), "Error inputting text into location input box inside location model", logger)
+	util.HandleError(locationInputBox.Input(fmt.Sprintf("%s, %s", searchParameters.City, searchParameters.State)), "Error inputting text into location input box inside location model", logger)
 
 	selectCityRaceHandler := page.Race().Element(selectCityFirstOption).Handle(func(e *rod.Element) error {
 		CityAndStateElement, err := page.Element("#\\:r1p\\:")
@@ -152,7 +121,7 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 		if err != nil {
 			fmt.Printf("error with item's <a> tags href attribute *string.href:%v Err:%v", *href, err)
 		}
-		car.CarDetailsURL = *href
+		car.CarDetailsURL = "www.facebook.com" + *href
 
 		actualCostSpan, err := divs.Element(actualCostSpanClassName)
 		if err != nil {
@@ -164,6 +133,7 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 		}
 		costInt, err := formatAndConvertPriceToInt(actualCostText)
 		if err != nil {
+			costInt = 0
 			fmt.Printf("error while converting price string to int. Err:%v", err)
 		}
 		car.Price = costInt
@@ -202,11 +172,11 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 		// spanWithText, err := mileageElement
 		if len(mileageElement) > 0 {
 
-			t, _ := mileageElement[0].Text()
-			tt, _ := mileageElement[1].Text()
-			fmt.Println(t, tt)
-			car.Location = t
-			car.Mileage = tt
+			location, _ := mileageElement[0].Text()
+			mileage, _ := mileageElement[1].Text()
+			fmt.Println(location, mileage)
+			car.Location = location
+			car.Mileage = mileage
 
 		}
 
@@ -223,10 +193,20 @@ func ScrapeMarketplace(browser *rod.Browser, cfg config.Config, logger *zap.Logg
 		cars = append(cars, car)
 
 	}
+	currentTime := time.Now()
+	formattedTime := fmt.Sprintf("%d-%d-%d-%d:%d:%d",
+		currentTime.Year(),
+		currentTime.Month(),
+		currentTime.Day(),
+		currentTime.Hour(),
+		currentTime.Hour(),
+		currentTime.Second())
+
 	carData := models.CarData{
-		CreationDate: time.Now().Format(time.RFC3339),
-		AmountOfCars: len(cars),
-		Cars:         cars,
+		CreationDate:         formattedTime,
+		ScrapedUrlParameters: searchParameters,
+		AmountOfCars:         len(cars),
+		Cars:                 cars,
 	}
 	// util.SaveScrapedDataToJSON(carData)
 	// fmt.Println(cars)
@@ -246,28 +226,6 @@ func formatAndConvertPriceToInt(price string) (int, error) {
 	return costInt, nil
 
 }
-
-// func saveScrapedDataToJSON(cars CarData) {
-// 	// cars = append(cars, time.Now().UTC())
-// 	// dateObj := map[string]time.Time{"creation_date": time.Now().UTC()}
-// 	fileName := fmt.Sprintf("%v_cars.json", cars.CreationDate)
-// 	file, err := os.Create(fileName)
-// 	if err != nil {
-// 		log.Fatalf("Failed to create JSON file: %v", err)
-// 	}
-// 	defer file.Close()
-// 	// file.WriteString(fmt.Sprintf("creation_date:%v", time.Now().UTC()))
-// 	encoder := json.NewEncoder(file)
-// 	encoder.SetIndent("", "  ")
-// 	if err := encoder.Encode(cars); err != nil {
-// 		log.Fatalf("Failed to encode cars to JSON: %v", err)
-// 	}
-
-// }
-
-// func joinClassNames(classes string) string {
-// 	return strings.Join(strings.Split(classes, " "), ".")
-// }
 
 var milesValues = map[int]int{
 	0:  1,

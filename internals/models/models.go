@@ -1,5 +1,7 @@
 package models
 
+import "github.com/jeffrey1200/facebook-marketplace-scraper/internals/cli"
+
 type CarInformation struct {
 	Price         int    `json:"price"`
 	PriceWasAt    int    `json:"price_was_at"`
@@ -11,9 +13,10 @@ type CarInformation struct {
 }
 
 type CarData struct {
-	CreationDate string           `json:"creation_date"`
-	AmountOfCars int              `json:"amount_of_cars"`
-	Cars         []CarInformation `json:"cars"`
+	CreationDate         string            `json:"creation_date"`
+	ScrapedUrlParameters cli.UrlParameters `json:"scraped_url_parameters"`
+	AmountOfCars         int               `json:"amount_of_cars"`
+	Cars                 []CarInformation  `json:"cars"`
 }
 
 type CarExtendedInformation struct {
